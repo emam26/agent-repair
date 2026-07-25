@@ -1,146 +1,540 @@
-# Multi-Step Agent Repair: Which Restart Strategy Wins?
+# Uncertainty-Guided Repair of Multi-Step Language-Model Agents
 
-When a multi-step AI agent fails, is it better to **redo just the one broken step**,
-or **restart the whole trajectory**? And can the agent's own **uncertainty** tell us
-which step to fix — even when the real error happened *upstream* of the uncertainty peak?
+When a multi-step agent fails, should it preserve the useful prefix and
+regenerate only a selected suffix, or discard the failed trajectory and
+restart from the original task?
 
-**Pipeline:** Task → ReAct agent → step-wise uncertainty → predicted failure point →
-{Targeted / Full Restart / Random / Oracle repair} → evaluation & causal analysis.
+This repository provides a controlled experimental framework for studying
+**where recovery should begin**, **whether uncertainty can identify useful
+intervention points**, and **when targeted repair is preferable to full
+restart** in ReAct-style language-model agents.
 
-## Experiment scope
+> **Project status:** Active research codebase for an intended AAAI 2027
+> submission. Reported findings should be tied to an exact code commit,
+> configuration, run manifest, and released output artifacts.
 
-| Axis | Coverage |
+<p align="center">
+  <a href="assets/overall_framework.png">
+    <img
+      src="assets/overall_framework.png"
+      alt="Overview of the uncertainty-guided trajectory repair framework"
+      width="100%"
+    />
+  </a>
+</p>
+
+<p align="center">
+  <em>
+    Failed ReAct trajectories are scored using step-level uncertainty,
+    localized using standard and cascade-aware rules, repaired through
+    targeted regeneration or full restart, and evaluated under matched
+    regeneration-token budgets. Orange dashed components are used only for
+    reference annotation and evaluation.
+  </em>
+</p>
+
+[View publication-quality framework figure](assets/overall_framework.pdf)
+
+---
+
+## Overview
+
+The framework follows the pipeline:
+
+```text
+Task + offline evidence
+        ↓
+ReAct agent and tools
+        ↓
+Multi-step trajectory τ with stored token log-probabilities
+        ↓
+Benchmark correctness check
+        ↓
+Failed trajectory
+        ↓
+Uncertainty scoring and intervention localization
+        ↓
+Targeted repair / Full restart / Random repair / Judge-targeted reference
+        ↓
+Repair-success, localization, cost, and statistical evaluation
+```
+
+A trajectory is represented as:
+
+```text
+τ = (s₁, s₂, …, sₜ)
+```
+
+where each step contains a reasoning trace, tool action, action input, and
+tool observation.
+
+The main comparison is between:
+
+- **Uncertainty-targeted repair:** preserve the prefix before a selected
+  repair origin and regenerate the remaining suffix.
+- **Full restart:** discard the failed trajectory and regenerate from the
+  original task.
+
+Random-step and judge-targeted repairs are included as comparison strategies.
+
+---
+
+## Research Questions
+
+### RQ1 — Is targeted repair worth pursuing?
+
+How does repair from a judge-annotated reference step compare with full
+restart under a matched regeneration-token budget?
+
+### RQ2 — What is the cost of imperfect localization?
+
+How closely can uncertainty-guided repair approach judge-targeted reference
+repair when the intervention point must be estimated from the failed
+trajectory?
+
+### RQ3 — Is uncertainty better than chance?
+
+Does uncertainty-guided intervention outperform repair from a randomly
+sampled step?
+
+Additional analyses study:
+
+- whether useful repair origins occur upstream of uncertainty peaks;
+- the effect of backtracking before regeneration;
+- generic versus error-type-informed nudges;
+- repair-success versus token-cost trade-offs;
+- differences across task types and trajectory lengths.
+
+---
+
+## Experimental Scope
+
+The repository is configured to support the following experiment matrix.
+
+| Axis | Configured coverage |
 |---|---|
-| **Models** | 8 models across 3 tiers — Small (7–9B), Medium (12–27B), Large (70–72B) |
+| **Agent models** | 8 open-weight language models across 7B–72B |
 | **Datasets** | HotpotQA, FEVER, 2WikiMultiHopQA, MuSiQue |
-| **Strategies** | 33 repair strategies (3 baselines + 5 metrics × 6 rules) |
-| **Inference** | vLLM + AWQ 4-bit quantization on A100-80GB |
+| **Base strategies** | 33: 3 comparisons + 5 uncertainty families × 6 localization rules |
+| **Seeds** | 3 |
+| **Inference** | vLLM with AWQ 4-bit quantization |
+| **Reference annotator** | Qwen2.5-72B-Instruct-AWQ |
 
-### Models
+The repository may support a larger matrix than the subset reported in a
+specific paper draft. Any released result should state the exact evaluated
+models, datasets, configurations, and code commit.
+
+### Agent Models
 
 | Tier | Models |
 |---|---|
-| Small | Qwen2.5-7B, Llama-3.1-8B, Gemma-2-9B |
-| Medium | Qwen2.5-14B, Mistral-Nemo-12B, Gemma-2-27B |
-| Large | Llama-3.3-70B, Qwen2.5-72B |
-| Judge | Qwen2.5-72B-Instruct-AWQ |
+| **Small, 7–9B** | Qwen2.5-7B, Llama-3.1-8B, Gemma-2-9B |
+| **Medium, 12–27B** | Mistral-Nemo-12B, Qwen2.5-14B, Gemma-2-27B |
+| **Large, 70–72B** | Llama-3.3-70B, Qwen2.5-72B |
+| **Reference judge** | Qwen2.5-72B-Instruct-AWQ |
 
-### Datasets
+### Supported Datasets
 
-| Dataset | Dev size | Task type | Stratify by |
-|---|---|---|---|
-| HotpotQA | 7,405 | Multi-hop QA | level, type |
-| FEVER | 19,998 | Fact verification | answer label |
-| 2WikiMultiHopQA | 12,576 | Multi-hop QA | type |
-| MuSiQue | 2,417 | Multi-hop QA | hop count |
+| Dataset | Development size | Task type | Sampling strata |
+|---|---:|---|---|
+| HotpotQA | 7,405 | Multi-hop question answering | Level and question type |
+| FEVER | 19,998 | Fact verification | Answer label |
+| 2WikiMultiHopQA | 12,576 | Multi-hop question answering | Question type |
+| MuSiQue | 2,417 | Compositional multi-hop QA | Hop count |
 
-## Research questions
+Retrieval operates over question-specific offline document collections.
+This avoids live-web variation and supports reproducible agent trajectories.
 
-- **RQ1** — Oracle-targeted repair vs Full Restart: *is targeting worth it?*
-- **RQ2** — Uncertainty-targeted vs Oracle: *what does imperfect localization cost?*
-- **RQ3** — Uncertainty-targeted vs Random: *is uncertainty better than luck?*
+---
 
-## How to run
+## Method
 
-| Environment | Instructions |
+### 1. Failure-Set Construction
+
+For each task instance:
+
+1. The ReAct agent interacts with the task-specific tools and offline
+   document environment.
+2. The complete trajectory and per-token log-probabilities are stored.
+3. The final answer is evaluated against the benchmark reference.
+4. Correct trajectories are excluded.
+5. Failed trajectories are retained for diagnosis and repair.
+
+This is an **offline benchmark gate**, not a deployable failure detector.
+
+### 2. Step-Level Uncertainty
+
+The framework supports five uncertainty families or metric groups:
+
+| Family | Signal |
 |---|---|
-| **Local / H100** | See **[RUN_LOCAL.md](RUN_LOCAL.md)** |
-| **Google Colab A100** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kishormorol/agent-repair/blob/main/run_colab.ipynb) |
-| **Multi-model matrix** | `python scripts/run_experiment.py --config config/config_experiment.yaml` |
+| Token entropy | Renormalized top-\(K\) token entropy |
+| Sampled-token probability | \(1-p_{\text{sampled}}\) |
+| Perplexity | Step-level exponentiated mean surprisal |
+| Self-consistency | Disagreement across sampled actions |
+| Verbalized confidence | Model-reported confidence converted to uncertainty |
 
-### Per-dataset Colab notebooks (run in parallel)
+These signals produce a step-level profile:
 
-| Dataset | Colab |
-|---|---|
-| **HotpotQA** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kishormorol/agent-repair/blob/main/run_colab_hotpotqa.ipynb) |
-| **FEVER** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kishormorol/agent-repair/blob/main/run_colab_fever.ipynb) |
-| **2WikiMultiHopQA** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kishormorol/agent-repair/blob/main/run_colab_2wikimultihopqa.ipynb) |
-| **MuSiQue** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kishormorol/agent-repair/blob/main/run_colab_musique.ipynb) |
-
-## The pipeline
-
-| Stage | Script | What it does | ~Time (A100, 500 Qs) |
-|---|---|---|---|
-| 0 | `run_setup.py` | Download dataset, create folders | 1 min |
-| 1 | `run_generate.py` | Run the ReAct agent; keep the **failed** trajectories | 1–2 h |
-| 2 | `run_uncertainty.py` | Score every step with **5 uncertainty metrics** | 1–2 h |
-| 3 | `run_annotate.py` | 72B judge marks the **true broken step** (+ `label_human.py` validates) | 1–2 h |
-| 4 | `run_localize.py` | Does uncertainty point at the true step? (5 metrics × 6 rules) | < 1 min |
-| 5 | `run_repair.py` | **33 repair strategies** on every failure; batched + deduplicated | 3–4 h |
-| 6 | `run_eval.py` | Tables, significance tests, causal analysis, figures | < 1 min |
-
-Every stage is **resumable** — if the process dies, re-run the same command and it picks up where it left off.
-
-## Repair strategies (33 total)
-
-**3 baselines:** Full Restart, Random Step, Oracle (fix the true broken step).
-
-**30 uncertainty-guided** = 5 metrics × 6 localization rules:
-
-| | argmax | top-k | earliest>thr | cascade-up | cascade-grad | cascade-wt |
-|---|---|---|---|---|---|---|
-| Token entropy | | | | | | |
-| Perplexity | | | | | | |
-| Max-token-prob | | | | | | |
-| Self-consistency | | | | | | |
-| Verbalized conf. | | | | | | |
-
-**Cascade-aware rules** (new): In our 500-question HotpotQA pilot, ~70% of localization
-misses occurred because the real error was *upstream* of the uncertainty peak — errors
-propagate forward through reasoning steps. The three cascade rules address this:
-
-- **cascade-upstream** — from the uncertainty peak, look back *k* steps
-- **cascade-gradient** — pick the step with the largest uncertainty *increase*
-- **cascade-weighted** — composite of normalized uncertainty and position bias toward earlier steps
-
-## Key design choices
-
-- **Distractor setting** → retrieval runs offline over each question's local
-  paragraphs (reproducible, no live Wikipedia), and gold supporting facts make
-  error annotation objective.
-- **Fair comparison** → identical nudge (retry hint + T=0.7) for *every* strategy,
-  matched token budget, 3 seeds, paired McNemar tests with Holm correction.
-- **Validated oracle** → 72B judge labels, checked against 50 human labels (κ).
-- **Dedup** → strategies picking the same step share one repair (same step + same
-  seed = same result), cutting GPU work by ~70–90%.
-- **Batching** → up to 64 ReAct rollouts in flight at once; full dev runs overnight.
-- **Multi-dataset** → dataset registry pattern — each dataset provides its own
-  environment, download function, and scorer.
-
-## Layout
-
+```text
+U(τ) = (U₁, U₂, …, Uₜ)
 ```
+
+### 3. Localization Rules
+
+Each uncertainty profile is converted into a predicted intervention point
+using one of six rules.
+
+| Standard rules | Cascade-aware rules |
+|---|---|
+| Argmax uncertainty | Upstream lookback |
+| Earliest among top-\(k\) | Largest uncertainty increase |
+| Earliest above percentile threshold | Position-weighted uncertainty |
+
+The cascade-aware rules test whether a useful repair origin may occur before
+the visible uncertainty peak.
+
+### 4. Intervention Configuration
+
+For a predicted step \(\hat{k}\), targeted repair may apply a backtracking
+offset \(b\):
+
+```text
+k′ = max(1, k̂ − b)
+```
+
+The repair preserves:
+
+```text
+s₁, …, sₖ′₋₁
+```
+
+and regenerates:
+
+```text
+s′ₖ′, …, s′ₜ′
+```
+
+Before regeneration, the framework can inject:
+
+- **Generic nudge:** asks the model to reconsider the previous attempt.
+- **Informed nudge:** supplies an error-class-specific hint derived from the
+  evaluation-only reference annotation.
+
+### 5. Repair Strategies
+
+The 33 base strategies consist of three comparisons and 30
+uncertainty-guided combinations.
+
+#### Comparison Strategies
+
+- **Full restart:** regenerate the complete trajectory.
+- **Random-step repair:** regenerate from a randomly sampled intervention
+  point.
+- **Judge-targeted reference repair:** regenerate from the reference step
+  annotated by the 72B judge.
+
+#### Uncertainty-Guided Strategies
+
+```text
+5 uncertainty families × 6 localization rules = 30 strategies
+```
+
+| Uncertainty family | Argmax | Top-\(k\) earliest | Percentile | Upstream | Gradient | Weighted |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| Token entropy | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Perplexity | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Sampled-token probability complement | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Self-consistency | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Verbalized confidence | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+
+### 6. Matched Recovery Budget
+
+Repair strategies are compared under the same regeneration-token budget:
+
+```text
+B = m × C(τ)
+```
+
+where \(C(\tau)\) is the original trajectory-generation cost and \(m\) is the
+configured budget multiplier.
+
+Wall-clock time and tool calls may be reported as observed costs, but they
+are not assumed to be matched unless a particular experiment explicitly
+controls them.
+
+### 7. Deduplication
+
+Different strategy definitions can produce the same effective repair
+configuration. Identical configurations are executed once and their
+outcomes are reused.
+
+The exact deduplication key should include every factor that changes the
+repair prompt or rollout, such as the intervention point, seed, nudge,
+budget, and relevant repair settings.
+
+---
+
+## Evaluation-Only Reference Annotation
+
+Reference annotation is separated from the uncertainty-guided repair path.
+
+It combines:
+
+1. a programmatic retrieval-gap cue; and
+2. a Qwen2.5-72B judge examining the failed trajectory, gold answer, and
+   supporting evidence.
+
+The annotation produces:
+
+- a **judge-annotated reference step** \(k^*\);
+- a **judge-annotated error class** \(e^*\).
+
+The five compact error classes are:
+
+```text
+Search | Extraction | Reasoning | Answer | Tool/Format
+```
+
+These correspond to wrong search queries, incorrect fact extraction, faulty
+reasoning, premature or wrong answers, and tool-formatting errors.
+
+The reference annotation is used for:
+
+- judge-targeted reference repair;
+- localization evaluation;
+- informed-nudge experiments;
+- error-type and failure-mode analysis.
+
+It is not available to the ordinary uncertainty-only repair path.
+
+---
+
+## Evaluation Metrics
+
+### Repair Success
+
+A failed trajectory is counted as repaired when the regenerated answer
+satisfies the benchmark correctness criterion:
+
+```text
+EM = 1 or F1 ≥ 0.5
+```
+
+The primary summary is the **fix rate** over originally failed trajectories.
+
+### Localization
+
+- Exact step agreement
+- Within-1 agreement
+- Mean reciprocal rank
+
+### Efficiency
+
+- Additional generated tokens
+- Total repair tokens
+- Optional observed runtime or tool-use statistics
+
+### Statistical Analysis
+
+- Bootstrap 95% confidence intervals
+- Paired McNemar tests
+- Holm correction for multiple comparisons
+
+Resampling and paired comparisons should preserve question-level dependence
+when multiple seeds or repair variants are associated with the same task
+instance.
+
+---
+
+## Quick Start
+
+### Local or H100 Execution
+
+See:
+
+```text
+RUN_LOCAL.md
+```
+
+### Google Colab
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](
+https://colab.research.google.com/github/kishormorol/agent-repair/blob/main/run_colab.ipynb
+)
+
+### Full Experiment Matrix
+
+```bash
+python scripts/run_experiment.py \
+  --config config/config_experiment.yaml
+```
+
+---
+
+## Dataset-Specific Colab Notebooks
+
+| Dataset | Notebook |
+|---|---|
+| **HotpotQA** | [Open in Colab](https://colab.research.google.com/github/kishormorol/agent-repair/blob/main/run_colab_hotpotqa.ipynb) |
+| **FEVER** | [Open in Colab](https://colab.research.google.com/github/kishormorol/agent-repair/blob/main/run_colab_fever.ipynb) |
+| **2WikiMultiHopQA** | [Open in Colab](https://colab.research.google.com/github/kishormorol/agent-repair/blob/main/run_colab_2wikimultihopqa.ipynb) |
+| **MuSiQue** | [Open in Colab](https://colab.research.google.com/github/kishormorol/agent-repair/blob/main/run_colab_musique.ipynb) |
+
+The notebooks can be run independently when separate compute instances are
+available.
+
+---
+
+## Pipeline Stages
+
+| Stage | Script | Function | Approximate runtime* |
+|---:|---|---|---|
+| 0 | `run_setup.py` | Download data and initialize output directories | Minutes |
+| 1 | `run_generate.py` | Generate ReAct trajectories and retain failures | Hours |
+| 2 | `run_uncertainty.py` | Compute step-level uncertainty signals | Hours |
+| 3 | `run_annotate.py` | Produce reference annotations and optional human-validation inputs | Hours |
+| 4 | `run_localize.py` | Apply metric–rule localization combinations | Minutes |
+| 5 | `run_repair.py` | Execute batched, resumable, deduplicated repair configurations | Hours |
+| 6 | `run_eval.py` | Produce metrics, statistical tests, analyses, and figures | Minutes |
+
+\* Runtime depends on model size, number of questions, batch configuration,
+hardware, quantization, repair budget, and uncertainty method.
+
+Every stage is designed to be resumable. Re-running the same command should
+continue from existing outputs rather than recomputing completed work.
+
+---
+
+## Reproducibility Controls
+
+- Offline question-specific evidence collections
+- Stored model and tokenizer identifiers
+- Stored token log-probabilities
+- Fixed dataset samples and stratification metadata
+- Matched regeneration-token budgets
+- Multiple random seeds
+- Paired comparisons over the same task instances
+- Resumable checkpoints
+- Deduplication of identical repair configurations
+- Config-driven model and dataset selection
+
+For a publishable result release, also store:
+
+- exact Git commit;
+- complete resolved configuration;
+- package lock file or environment export;
+- CUDA, driver, and vLLM versions;
+- model revision and quantization metadata;
+- task IDs included in each split;
+- generated trajectories and repair outputs;
+- statistical-analysis artifacts.
+
+---
+
+## Repository Layout
+
+```text
 config/
-  config_colab.yaml        Colab A100 profile (500 questions)
-  config_local.yaml        Local H100 profile (full dev sets)
-  config_experiment.yaml   Multi-model × multi-dataset matrix
-  models.yaml              8-model catalog (small / medium / large)
-  datasets.yaml            4-dataset catalog
+  config_colab.yaml
+  config_local.yaml
+  config_experiment.yaml
+  models.yaml
+  datasets.yaml
 
 scripts/
-  run_setup.py … run_eval.py   the 7 pipeline stages
-  run_experiment.py            master runner for the full model × dataset matrix
-  run_paper_tables.py          aggregate cross-experiment results into paper tables
+  run_setup.py
+  run_generate.py
+  run_uncertainty.py
+  run_annotate.py
+  run_localize.py
+  run_repair.py
+  run_eval.py
+  run_experiment.py
+  run_paper_tables.py
 
 src/
-  env/                     dataset environments (HotpotQA, FEVER, 2WikiMQA, MuSiQue)
-  agent/                   ReAct loop (resumable) + batched runner
-  llm/                     vLLM client with per-token logprobs
-  uncertainty/             5 uncertainty metrics
-  annotate/                programmatic + 72B-judge error labels + human validation
-  localize/                6 localization rules (incl. 3 cascade-aware)
-  repair/                  33 repair strategies
-  eval/, analysis/         statistics, ensemble, causal failure-mode analysis
+  env/
+  agent/
+  llm/
+  uncertainty/
+  annotate/
+  localize/
+  repair/
+  eval/
+  analysis/
 
-outputs/                   created on first run: trajectories, tables, figures
-run_colab.ipynb            one-click Colab notebook
+assets/
+  overall_framework.png
+  overall_framework.pdf
+
+outputs/
+  trajectories/
+  annotations/
+  repairs/
+  tables/
+  figures/
+
+run_colab.ipynb
+RUN_LOCAL.md
 ```
 
-## Reading the results
+---
 
-- `outputs/tables/summary.txt` — answers RQ1–RQ3 in plain English
-- `outputs/tables/main_results_readable.csv` — percentages per strategy
-- `outputs/tables/main_results.csv` — raw fractions (e.g. `0.352` = 35.2%)
-- `outputs/tables/rq_tests.json` — statistical tests with p-values
-- `outputs/tables/failure_modes.json` — why localization misses
-- `outputs/figures/` — headline bars, metric×rule heatmap, Pareto cost-vs-success, failure modes
+## Reading the Outputs
+
+| Path | Content |
+|---|---|
+| `outputs/tables/summary.txt` | Plain-language summary of the research questions |
+| `outputs/tables/main_results_readable.csv` | Percentage-formatted strategy results |
+| `outputs/tables/main_results.csv` | Raw metric values |
+| `outputs/tables/rq_tests.json` | Paired statistical comparisons |
+| `outputs/tables/failure_modes.json` | Localization and repair failure-mode analysis |
+| `outputs/figures/` | Main result plots, heatmaps, cost–success analyses, and failure-mode figures |
+
+Output availability depends on the completed experiment stages and selected
+configuration.
+
+---
+
+## Interpreting Results Carefully
+
+Several quantities in this repository are research constructs rather than
+direct ground truth:
+
+- \(k^*\) is a judge-annotated reference step, not necessarily the uniquely
+  causal or optimal intervention point.
+- An oracle-union result that counts success when any strategy succeeds is an
+  upper bound unless a deployable selector chooses among candidates without
+  gold labels.
+- Full restart outperforming targeted repair is consistent with harmful
+  retained context, but does not alone establish context contamination as
+  the causal mechanism.
+- Backtracking improvements are consistent with upstream error propagation,
+  but can also reflect annotation noise or mismatch between the earliest
+  visible error and the best intervention point.
+- The best uncertainty strategy should be selected on validation data rather
+  than chosen post hoc on the final test set.
+
+---
+
+## Citation
+
+A formal citation will be added when the paper is publicly released.
+
+```bibtex
+@misc{agentrepair2027,
+  title  = {Uncertainty-Guided Error Repair in Multi-Step Language Model
+            Agents: When to Target, When to Restart},
+  author = {Anonymous},
+  year   = {2027},
+  note   = {Manuscript under review}
+}
+```
+
+---
+
+## License
+
+Add the repository license and any model- or dataset-specific usage
+conditions here.
