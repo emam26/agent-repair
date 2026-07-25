@@ -33,7 +33,7 @@ restart** in ReAct-style language-model agents.
   </em>
 </p>
 
-[View publication-quality framework figure](assets/overall_framework.pdf)
+[View publication-quality framework figure](assets/arch.pdf)
 
 ---
 
