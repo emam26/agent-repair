@@ -430,56 +430,7 @@ For a publishable result release, also store:
 - generated trajectories and repair outputs;
 - statistical-analysis artifacts.
 
----
 
-## Repository Layout
-
-```text
-config/
-  config_colab.yaml
-  config_local.yaml
-  config_experiment.yaml
-  models.yaml
-  datasets.yaml
-
-scripts/
-  run_setup.py
-  run_generate.py
-  run_uncertainty.py
-  run_annotate.py
-  run_localize.py
-  run_repair.py
-  run_eval.py
-  run_experiment.py
-  run_paper_tables.py
-
-src/
-  env/
-  agent/
-  llm/
-  uncertainty/
-  annotate/
-  localize/
-  repair/
-  eval/
-  analysis/
-
-assets/
-  overall_framework.png
-  overall_framework.pdf
-
-outputs/
-  trajectories/
-  annotations/
-  repairs/
-  tables/
-  figures/
-
-run_colab.ipynb
-RUN_LOCAL.md
-```
-
----
 
 ## Reading the Outputs
 
