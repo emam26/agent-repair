@@ -438,8 +438,6 @@ For a publishable result release, also store:
 | `outputs/tables/failure_modes.json` | Localization and repair failure-mode analysis |
 | `outputs/figures/` | Main result plots, heatmaps, cost–success analyses, and failure-mode figures |
 
-Output availability depends on the completed experiment stages and selected
-configuration.
 
 ---
 
