@@ -476,4 +476,4 @@ A formal citation will be added when the paper is publicly released.
 }
 ```
 ## License
-Apache License 2.0
+The project is under Apache License 2.0
