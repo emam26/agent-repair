@@ -9,14 +9,11 @@ This repository provides a controlled experimental framework for studying
 intervention points**, and **when targeted repair is preferable to full
 restart** in ReAct-style language-model agents.
 
-> **Project status:** Active research codebase for an intended AAAI 2027
-> submission. Reported findings should be tied to an exact code commit,
-> configuration, run manifest, and released output artifacts.
 
 <p align="center">
-  <a href="assets/overall_framework.png">
+  <a href="assets/arch.png">
     <img
-      src="assets/overall_framework.png"
+      src="assets/arch.png"
       alt="Overview of the uncertainty-guided trajectory repair framework"
       width="100%"
     />
@@ -33,7 +30,6 @@ restart** in ReAct-style language-model agents.
   </em>
 </p>
 
-[View publication-quality framework figure](assets/arch.pdf)
 
 ---
 
