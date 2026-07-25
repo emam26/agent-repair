@@ -15,7 +15,7 @@ restart** in ReAct-style language-model agents.
     <img
       src="assets/arch.png"
       alt="Overview of the uncertainty-guided trajectory repair framework"
-      width="100%"
+      width="85%"
     />
   </a>
 </p>
@@ -29,7 +29,6 @@ restart** in ReAct-style language-model agents.
     reference annotation and evaluation.
   </em>
 </p>
-
 
 ---
 
