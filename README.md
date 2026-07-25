@@ -475,7 +475,8 @@ A formal citation will be added when the paper is publicly released.
   note   = {Manuscript under review}
 }
 ```
-
+# License
+Apache License 2.0
 ---
 
 ## License
