@@ -474,12 +474,7 @@ A formal citation will be added when the paper is publicly released.
   year   = {2027},
   note   = {Manuscript under review}
 }
-```
-# License
-Apache License 2.0
----
+
 
 ## License
-
-Add the repository license and any model- or dataset-specific usage
-conditions here.
+Apache License 2.0
