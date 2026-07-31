@@ -233,7 +233,14 @@ We validate the judge against 50 human-labeled trajectories per dataset, measuri
 
 \subsection{RQ1: Is Targeted Repair Worth Pursuing?}
 
-Table~\ref{tab:main_results} presents the core comparison across all four benchmarks.
+Table~\ref{tab:main_results} presents the core comparison across all four benchmarks. Figure~\ref{fig:cross_bars} visualizes the repair success rates across strategies and datasets.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_cross_dataset_bars.png}
+\caption{Repair success rates (\%) across four benchmarks and seven strategy categories. 2WikiMultiHopQA shows the highest absolute fix rates; ensemble strategies achieve 2--4$\times$ higher rates at substantially greater compute cost.}
+\label{fig:cross_bars}
+\end{figure*}
 
 \begin{table}[t]
 \centering
@@ -281,7 +288,14 @@ Oracle + bt2 & 12.4 (+1.5) & 3.2 (+0.7) & 5.6 (+0.7) & 22.0 (+12.0) \\
 \end{tabular}
 \end{table}
 
-\paragraph{Finding 2: Backtracking consistently helps.} Across all four benchmarks, starting the repair two steps upstream of the identified failure point improves success rates (Table~\ref{tab:backtrack}). The effect is most dramatic on 2WikiMultiHopQA, where backtracking more than doubles the oracle fix rate (10.0\% $\to$ 22.0\%, a +12.0 pp gain). This confirms the error cascade hypothesis: errors propagate forward through reasoning chains, and the true root cause often precedes the step where uncertainty peaks or the judge identifies failure.
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_backtracking_gain.png}
+\caption{Left: Oracle, Oracle+bt2, and Full Restart fix rates. Right: Backtracking gain (Oracle+bt2 $-$ Oracle). The +12.0 pp gain on 2WikiMultiHopQA confirms strong error cascade effects.}
+\label{fig:bt_gain}
+\end{figure}
+
+\paragraph{Finding 2: Backtracking consistently helps.} Across all four benchmarks, starting the repair two steps upstream of the identified failure point improves success rates (Table~\ref{tab:backtrack} and Figure~\ref{fig:bt_gain}). The effect is most dramatic on 2WikiMultiHopQA, where backtracking more than doubles the oracle fix rate (10.0\% $\to$ 22.0\%, a +12.0 pp gain). This confirms the error cascade hypothesis: errors propagate forward through reasoning chains, and the true root cause often precedes the step where uncertainty peaks or the judge identifies failure.
 
 This finding validates the motivation for our cascade-aware localization rules, which explicitly model upstream error origins.
 
@@ -308,7 +322,7 @@ $\Delta$ & +5.1 & +2.2 & +1.8 & +6.4 \\
 
 \subsection{Localization Analysis}
 
-Table~\ref{tab:localization} reports localization accuracy across metrics and datasets.
+Table~\ref{tab:localization} reports localization accuracy across metrics and datasets (visualized in Figure~\ref{fig:loc_heatmap}).
 
 \begin{table}[t]
 \centering
@@ -329,6 +343,13 @@ Random baseline & 0.223 & 0.304 & 0.153 & 0.236 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_localization_heatmap.png}
+\caption{Localization accuracy (argmax top-1) by uncertainty metric and dataset. Self-consistency achieves the highest accuracy across all benchmarks, reaching 0.404 on 2WikiMultiHopQA.}
+\label{fig:loc_heatmap}
+\end{figure}
 
 \paragraph{Self-consistency is the best localizer.} Across all datasets, self-consistency achieves the highest argmax top-1 accuracy, reaching 40.4\% on 2WikiMultiHopQA---the only dataset where it substantially exceeds the random baseline (0.404 vs.\ 0.236). On HotpotQA, it reaches 24.8\%. Notably, on FEVER and MuSiQue, even the best uncertainty metric underperforms the random baseline for exact localization---yet uncertainty-guided \emph{repair} still outperforms random repair, suggesting that approximate localization (within 1--2 steps) is sufficient for effective repair, especially with backtracking.
 
@@ -370,6 +391,13 @@ Ensemble (any) & 11,426 & 46.0 \\
 \end{tabular}
 \end{table}
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_pareto_all_datasets.png}
+\caption{Cost-accuracy Pareto fronts for all four datasets. Each grey dot is an individual repair strategy; labeled points show baselines. On 2WikiMultiHopQA, many uncertainty strategies dominate the Pareto front above Full Restart.}
+\label{fig:pareto}
+\end{figure*}
+
 The ensemble strategy---which succeeds if \emph{any} member strategy produces a correct answer---achieves 36.0\% on HotpotQA, 9.6\% on FEVER, 16.2\% on MuSiQue, and 46.0\% on 2WikiMultiHopQA (Table~\ref{tab:cost}). However, this comes at 47--70$\times$ the compute cost of individual strategies. Notably, 2WikiMultiHopQA shows the highest absolute fix rates across all strategies, likely due to the lower failure rate (203/500 vs.\ 226--485/500 on other datasets) indicating that these failures are more ``repairable.'' This highlights a fundamental tradeoff: practitioners must choose between cheap-but-moderate repair (single strategy) and expensive-but-effective repair (ensemble).
 
 \subsection{Informed vs.\ Generic Nudges}
@@ -386,6 +414,13 @@ Counter to expectations, error-type-specific informed nudges do not consistently
 We investigate why full restart outperforms oracle-targeted repair on multi-hop QA through two analyses:
 
 \paragraph{Context contamination.} The hit\_true\_step metric reveals that full restart ``accidentally'' hits the oracle step 31.9\% of the time on HotpotQA (42.8\% on MuSiQue, 3.0\% on 2WikiMultiHopQA), compared to 100\% for oracle-targeted. Despite this disadvantage, full restart still wins on HotpotQA and MuSiQue, confirming that the benefit of a clean context outweighs the cost of not targeting the specific broken step.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_traj_length_vs_repair.png}
+\caption{Trajectory length vs.\ repair effectiveness. Shorter trajectories (FEVER, 2WikiMHQA) favor targeted repair; longer trajectories (HotpotQA, MuSiQue) favor full restart, consistent with the context contamination hypothesis.}
+\label{fig:traj_repair}
+\end{figure}
 
 \paragraph{Trajectory length as moderator.} FEVER trajectories average 3.9 tool calls vs.\ 4.7 for HotpotQA, 4.0 for 2WikiMultiHopQA, and 6.6 for MuSiQue. Shorter trajectories have less accumulated context contamination, explaining why targeted repair succeeds on FEVER but not on the longer multi-hop QA tasks. Interestingly, 2WikiMultiHopQA has similar trajectory length to FEVER (4.0 tool calls) and shows a similar pattern: oracle + bt2 (22.0\%) slightly exceeds full restart (21.2\%), and the best uncertainty strategy (25.4\%) surpasses both. This further supports the heuristic: \emph{use targeted repair with backtracking for short trajectories and full restart for long ones}.
 

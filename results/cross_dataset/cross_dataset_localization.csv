@@ -1,0 +1,6 @@
+metric,HotpotQA,FEVER,MuSiQue,2WikiMHQA
+self_consistency,0.248,0.223,0.129,0.404
+token_entropy_max,0.195,0.21,0.099,0.246
+max_token_prob_max,0.177,0.212,0.099,0.232
+perplexity,0.173,0.171,0.064,0.167
+verbalized_confidence,0.088,0.167,0.085,0.059
