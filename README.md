@@ -102,31 +102,36 @@ Additional analyses study:
 
 ---
 
+## Key Results
+
+Experiments use **Qwen2.5-32B-Instruct-AWQ** as the agent and **Qwen2.5-72B-Instruct-AWQ** as the judge, evaluated across 4 benchmarks with 126 repair configurations x 3 seeds (506K+ repair rows).
+
+| | HotpotQA | FEVER | MuSiQue | 2WikiMHQA |
+|---|---|---|---|---|
+| **Failed / 500** | 226 (45%) | 485 (97%) | 425 (85%) | 203 (41%) |
+| **Avg tool calls** | 4.7 | 3.9 | 6.6 | 4.0 |
+| **Best single strategy** | Full Restart 14.2% | Best Unc 3.5% | Full Restart 5.9% | Best Unc 25.5% |
+| **Ensemble (any)** | 36.0% | 9.6% | 16.2% | 46.0% |
+
+**Three key findings:**
+
+1. **Optimal strategy is task-dependent.** Full restart wins on longer trajectories (HotpotQA, MuSiQue); uncertainty-guided repair wins on shorter ones (FEVER, 2WikiMHQA). This supports the *context contamination* hypothesis.
+2. **Backtracking consistently helps.** Starting repair 2 steps upstream improves fix rates on every dataset, with a dramatic +12.0 pp gain on 2WikiMHQA.
+3. **Uncertainty beats random.** The gap ranges from +1.8 pp (MuSiQue) to +6.4 pp (2WikiMHQA), validating internal model signals for error localization.
+
+---
+
 ## Experimental Scope
 
-The repository is configured to support the following experiment matrix.
-
-| Axis | Configured coverage |
+| Axis | Coverage |
 |---|---|
-| **Agent models** | 8 open-weight language models across 7B–72B |
+| **Agent model** | Qwen2.5-32B-Instruct-AWQ (4-bit, A100-80GB) |
 | **Datasets** | HotpotQA, FEVER, 2WikiMultiHopQA, MuSiQue |
-| **Base strategies** | 33: 3 comparisons + 5 uncertainty families × 6 localization rules |
+| **Base strategies** | 33: 3 baselines + 5 uncertainty metrics x 6 localization rules |
+| **Configurations** | 126 (with backtrack offsets and nudge types) |
 | **Seeds** | 3 |
-| **Inference** | vLLM with AWQ 4-bit quantization |
+| **Inference** | vLLM 0.19.0 with AWQ 4-bit quantization |
 | **Reference annotator** | Qwen2.5-72B-Instruct-AWQ |
-
-The repository may support a larger matrix than the subset reported in a
-specific paper draft. Any released result should state the exact evaluated
-models, datasets, configurations, and code commit.
-
-### Agent Models
-
-| Tier | Models |
-|---|---|
-| **Small, 7–9B** | Qwen2.5-7B, Llama-3.1-8B, Gemma-2-9B |
-| **Medium, 12–27B** | Mistral-Nemo-12B, Qwen2.5-14B, Gemma-2-27B |
-| **Large, 70–72B** | Llama-3.3-70B, Qwen2.5-72B |
-| **Reference judge** | Qwen2.5-72B-Instruct-AWQ |
 
 ### Supported Datasets
 
@@ -375,9 +380,11 @@ python scripts/run_experiment.py \
 | **FEVER** | [Open in Colab](https://colab.research.google.com/github/kishormorol/agent-repair/blob/main/run_colab_fever.ipynb) |
 | **2WikiMultiHopQA** | [Open in Colab](https://colab.research.google.com/github/kishormorol/agent-repair/blob/main/run_colab_2wikimultihopqa.ipynb) |
 | **MuSiQue** | [Open in Colab](https://colab.research.google.com/github/kishormorol/agent-repair/blob/main/run_colab_musique.ipynb) |
+| **Cross-Dataset Analysis** | [Open in Colab](https://colab.research.google.com/github/kishormorol/agent-repair/blob/main/run_cross_dataset_analysis.ipynb) |
 
-The notebooks can be run independently when separate compute instances are
-available.
+The per-dataset notebooks require a GPU runtime (A100-80GB recommended).
+The cross-dataset analysis notebook runs on CPU and produces publication-ready
+figures and summary tables from the per-dataset results.
 
 ---
 
@@ -464,16 +471,16 @@ direct ground truth:
 
 ## Citation
 
-A formal citation will be added when the paper is publicly released.
-
 ```bibtex
-@misc{agentrepair2027,
+@article{morol2025uncertainty,
   title  = {Uncertainty-Guided Error Repair in Multi-Step Language Model
             Agents: When to Target, When to Restart},
-  author = {Anonymous},
-  year   = {2027},
-  note   = {Manuscript under review}
+  author = {Morol, Md Kishor},
+  year   = {2025},
+  url    = {https://github.com/kishormorol/agent-repair}
 }
 ```
+
 ## License
-The project is under Apache License 2.0
+
+This project is under the Apache License 2.0.
