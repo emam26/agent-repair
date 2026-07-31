@@ -88,7 +88,7 @@ def main() -> None:
     print(readable.to_string(index=False))
 
     # ---- metric x rule heatmap (bt0 only) --------------------------------- #
-    u = df[df.strategy.isin(bt0_strats)] if bt0_strats else df[df.strategy.isin(unc_strats)]
+    u = df[df.strategy.isin(bt0_unc)] if bt0_unc else df[df.strategy.isin(unc_strats)]
     piv = u.groupby(["metric", "rule"])["success"].mean().unstack("rule")
     mo = [m for m in cfg.raw["repair"]["uncertainty_metrics"] if m in piv.index]
     ro = [r for r in cfg.raw["repair"]["uncertainty_rules"] if r in piv.columns]
