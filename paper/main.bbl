@@ -1,0 +1,89 @@
+\begin{thebibliography}{17}
+\providecommand{\natexlab}[1]{#1}
+
+\bibitem[{Ho et~al.(2020)Ho, Duong~Nguyen, Sugawara, and Aizawa}]{ho2020constructing}
+Ho, X.; Duong~Nguyen, A.-K.; Sugawara, S.; and Aizawa, A. 2020.
+\newblock Constructing A Multi-Hop {QA} Dataset for Comprehensive Evaluation of Reasoning Steps.
+\newblock In \emph{International Conference on Computational Linguistics (COLING)}.
+
+\bibitem[{Huang et~al.(2024)Huang, Xia, Xing, Yu, and Chang}]{huang2024large}
+Huang, J.; Xia, X.; Xing, X.; Yu, J.; and Chang, K.-W. 2024.
+\newblock Large Language Models Cannot Self-Correct Reasoning Yet.
+\newblock \emph{International Conference on Learning Representations (ICLR)}.
+
+\bibitem[{Kadavath et~al.(2022)Kadavath, Conerly, Askell, Henighan, Drain, Perez, Schiefer, Hatfield-Dodds, DasSarma, Tran-Johnson, Johnston, El-Showk, Jones, Elhage, Hume, Chen, Bai, Bowman, Fort, Ganguli, Hernandez, Jacobson, Kernion, Kravec, Lovitt, Ndousse, Olsson, Ringer, Amodei, Brown, Clark, Joseph, Mann, McCandlish, Olah, and Kaplan}]{kadavath2022language}
+Kadavath, S.; Conerly, T.; Askell, A.; Henighan, T.; Drain, D.; Perez, E.; Schiefer, N.; Hatfield-Dodds, Z.; DasSarma, N.; Tran-Johnson, E.; Johnston, S.; El-Showk, S.; Jones, A.; Elhage, N.; Hume, T.; Chen, A.; Bai, Y.; Bowman, S.; Fort, S.; Ganguli, D.; Hernandez, D.; Jacobson, J.; Kernion, J.; Kravec, S.; Lovitt, L.; Ndousse, K.; Olsson, C.; Ringer, S.; Amodei, D.; Brown, T.; Clark, J.; Joseph, N.; Mann, B.; McCandlish, S.; Olah, C.; and Kaplan, J. 2022.
+\newblock Language Models (Mostly) Know What They Know.
+\newblock \emph{arXiv preprint arXiv:2207.05221}.
+
+\bibitem[{Lightman et~al.(2024)Lightman, Kosaraju, Burda, Edwards, Baker, Lee, Leike, Schulman, and Sutskever}]{lightman2024lets}
+Lightman, H.; Kosaraju, V.; Burda, Y.; Edwards, H.; Baker, B.; Lee, T.; Leike, J.; Schulman, J.; and Sutskever, K.~C., Ilya~andAlignment. 2024.
+\newblock Let's Verify Step by Step.
+\newblock In \emph{International Conference on Learning Representations (ICLR)}.
+
+\bibitem[{Madaan et~al.(2023)Madaan, Tandon, Gupta, Hallinan, Gao, Wiegreffe, Alon, Dziri, Prabhumoye, Yang, Gupta, Majumder, Hermann, Welleck, Yazdanbakhsh, and Clark}]{madaan2023selfrefine}
+Madaan, A.; Tandon, N.; Gupta, P.; Hallinan, S.; Gao, L.; Wiegreffe, S.; Alon, U.; Dziri, N.; Prabhumoye, S.; Yang, Y.; Gupta, S.; Majumder, B.~P.; Hermann, K.; Welleck, S.; Yazdanbakhsh, A.; and Clark, P. 2023.
+\newblock Self-Refine: Iterative Refinement with Self-Feedback.
+\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS)}.
+
+\bibitem[{Manakul, Liusie, and Gales(2023)}]{manakul2023selfcheckgpt}
+Manakul, P.; Liusie, A.; and Gales, M. J.~F. 2023.
+\newblock {SelfCheckGPT}: Zero-Resource Black-Box Hallucination Detection for Generative Large Language Models.
+\newblock In \emph{Conference on Empirical Methods in Natural Language Processing (EMNLP)}.
+
+\bibitem[{Pan et~al.(2024)Pan, Saxon, Xu, Nathani, Wang, and Wang}]{pan2024automatically}
+Pan, L.; Saxon, M.; Xu, W.; Nathani, D.; Wang, X.; and Wang, W.~Y. 2024.
+\newblock Automatically Correcting Large Language Models: Surveying the Landscape of Diverse Automated Correction Strategies.
+\newblock In \emph{Transactions of the Association for Computational Linguistics (TACL)}.
+
+\bibitem[{Qian et~al.(2023)Qian, Han, Fung, Qin, Liu, and Ji}]{qian2023creator}
+Qian, C.; Han, C.; Fung, Y.~R.; Qin, Y.; Liu, Z.; and Ji, H. 2023.
+\newblock {CREATOR}: Tool Creation for Disentangling Abstract and Concrete Reasoning of Large Language Models.
+\newblock In \emph{Findings of the Association for Computational Linguistics (EMNLP)}.
+
+\bibitem[{Shinn et~al.(2023)Shinn, Cassano, Gopinath, Narasimhan, and Yao}]{shinn2023reflexion}
+Shinn, N.; Cassano, F.; Gopinath, A.; Narasimhan, K.; and Yao, S. 2023.
+\newblock Reflexion: Language Agents with Verbal Reinforcement Learning.
+\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS)}.
+
+\bibitem[{Thorne et~al.(2018)Thorne, Vlachos, Christodoulopoulos, and Mittal}]{thorne2018fever}
+Thorne, J.; Vlachos, A.; Christodoulopoulos, C.; and Mittal, A. 2018.
+\newblock {FEVER}: a Large-scale Dataset for Fact Extraction and {VERification}.
+\newblock In \emph{Conference of the North American Chapter of the Association for Computational Linguistics (NAACL)}.
+
+\bibitem[{Tian et~al.(2023)Tian, Mitchell, Yao, Manning, and Finn}]{tian2023just}
+Tian, K.; Mitchell, E.; Yao, H.; Manning, C.~D.; and Finn, C. 2023.
+\newblock Just Ask for Calibration: Strategies for Eliciting Calibrated Confidence Scores from Language Models Fine-Tuned with Human Feedback.
+\newblock In \emph{Conference on Empirical Methods in Natural Language Processing (EMNLP)}.
+
+\bibitem[{Trivedi et~al.(2022)Trivedi, Balasubramanian, Khot, and Sabharwal}]{trivedi2022musique}
+Trivedi, H.; Balasubramanian, N.; Khot, T.; and Sabharwal, A. 2022.
+\newblock {MuSiQue}: Multihop Questions via Single Hop Question Composition.
+\newblock In \emph{Transactions of the Association for Computational Linguistics (TACL)}, volume~10, 539--554.
+
+\bibitem[{Wang et~al.(2023)Wang, Wei, Schuurmans, Le, Chi, Narang, Chowdhery, and Zhou}]{wang2023selfconsistency}
+Wang, X.; Wei, J.; Schuurmans, D.; Le, Q.~V.; Chi, E.~H.; Narang, S.; Chowdhery, A.; and Zhou, D. 2023.
+\newblock Self-Consistency Improves Chain of Thought Reasoning in Language Models.
+\newblock In \emph{International Conference on Learning Representations (ICLR)}.
+
+\bibitem[{Wei et~al.(2022)Wei, Wang, Schuurmans, Bosma, Ichter, Xia, Chi, Le, and Zhou}]{wei2022chain}
+Wei, J.; Wang, X.; Schuurmans, D.; Bosma, M.; Ichter, B.; Xia, F.; Chi, E.~H.; Le, Q.~V.; and Zhou, D. 2022.
+\newblock Chain-of-Thought Prompting Elicits Reasoning in Large Language Models.
+\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS)}.
+
+\bibitem[{Yang et~al.(2018)Yang, Qi, Zhang, Bengio, Cohen, Salakhutdinov, and Manning}]{yang2018hotpotqa}
+Yang, Z.; Qi, P.; Zhang, S.; Bengio, Y.; Cohen, W.~W.; Salakhutdinov, R.; and Manning, C.~D. 2018.
+\newblock {HotpotQA}: A Dataset for Diverse, Explainable Multi-hop Question Answering.
+\newblock In \emph{Conference on Empirical Methods in Natural Language Processing (EMNLP)}.
+
+\bibitem[{Yao et~al.(2023{\natexlab{a}})Yao, Yu, Zhao, Shafran, Griffiths, Cao, and Narasimhan}]{yao2023tree}
+Yao, S.; Yu, D.; Zhao, J.; Shafran, I.; Griffiths, T.~L.; Cao, Y.; and Narasimhan, K. 2023{\natexlab{a}}.
+\newblock Tree of Thoughts: Deliberate Problem Solving with Large Language Models.
+\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS)}.
+
+\bibitem[{Yao et~al.(2023{\natexlab{b}})Yao, Zhao, Yu, Du, Shafran, Narasimhan, and Cao}]{yao2023react}
+Yao, S.; Zhao, J.; Yu, D.; Du, N.; Shafran, I.; Narasimhan, K.; and Cao, Y. 2023{\natexlab{b}}.
+\newblock {ReAct}: Synergizing Reasoning and Acting in Language Models.
+\newblock In \emph{International Conference on Learning Representations (ICLR)}.
+
+\end{thebibliography}

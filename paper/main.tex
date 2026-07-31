@@ -15,18 +15,23 @@
 \usepackage{amsmath,amsfonts,amssymb}
 \usepackage{booktabs}
 \usepackage{xcolor}
-\usepackage{hyperref}
 
 \newcommand{\ours}{\textsc{UncRepair}}
 \newcommand{\ie}{\textit{i.e.}}
 \newcommand{\eg}{\textit{e.g.}}
 \newcommand{\cf}{\textit{cf.}}
 
+\pdfinfo{
+/Title (Uncertainty-Guided Error Repair in Multi-Step Language Model Agents: When to Target, When to Restart)
+/Author (Md Kishor Morol)
+}
+
+\setcounter{page}{1}
+
 \title{Uncertainty-Guided Error Repair in Multi-Step Language Model Agents:\\When to Target, When to Restart}
 
 \author{
-  Md Kishor Morol\\
-  \texttt{kishormorol@example.com}
+  Md Kishor Morol
 }
 
 \begin{document}
@@ -246,19 +251,20 @@ Table~\ref{tab:main_results} presents the core comparison across all four benchm
 \centering
 \caption{Repair success rates (\%) across four benchmarks. \textbf{Bold} = best non-ensemble strategy per dataset. All results use Qwen2.5-32B agent with 95\% bootstrap CIs.}
 \label{tab:main_results}
-\small
+\scriptsize
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 \textbf{Strategy} & \textbf{HotpotQA} & \textbf{FEVER} & \textbf{MuSiQue} & \textbf{2Wiki} \\
 \midrule
-Random step & 8.1 {\scriptsize(6.0--10.2)} & 1.2 {\scriptsize(0.6--1.7)} & 3.8 {\scriptsize(2.8--4.9)} & 19.0 {\scriptsize(15.9--22.2)} \\
-Oracle targeted & 10.9 {\scriptsize(8.6--13.3)} & 2.5 {\scriptsize(1.7--3.3)} & 4.9 {\scriptsize(3.7--6.0)} & 10.0 {\scriptsize(7.7--12.5)} \\
-Oracle + bt2 & 12.4 {\scriptsize(10.0--14.9)} & \textbf{3.2} {\scriptsize(2.3--4.0)} & 5.6 {\scriptsize(4.4--6.8)} & 22.0 {\scriptsize(18.7--25.3)} \\
-Oracle + informed & 11.4 {\scriptsize(9.0--13.9)} & 2.5 {\scriptsize(1.8--3.4)} & 4.9 {\scriptsize(3.8--6.0)} & 12.2 {\scriptsize(9.5--14.8)} \\
-Full restart & \textbf{14.2} {\scriptsize(11.7--16.8)} & 2.8 {\scriptsize(2.0--3.7)} & \textbf{5.9} {\scriptsize(4.6--7.2)} & 21.2 {\scriptsize(18.1--24.5)} \\
-Best unc.\ + bt2 & 13.2 {\scriptsize(10.7--15.7)} & 3.4 {\scriptsize(2.5--4.3)} & 5.6 {\scriptsize(4.3--6.9)} & \textbf{25.4} {\scriptsize(22.0--28.9)} \\
+Random step & 8.1 {\tiny(6.0--10.2)} & 1.2 {\tiny(0.6--1.7)} & 3.8 {\tiny(2.8--4.9)} & 19.0 {\tiny(15.9--22.2)} \\
+Oracle targeted & 10.9 {\tiny(8.6--13.3)} & 2.5 {\tiny(1.7--3.3)} & 4.9 {\tiny(3.7--6.0)} & 10.0 {\tiny(7.7--12.5)} \\
+Oracle + bt2 & 12.4 {\tiny(10.0--14.9)} & \textbf{3.2} {\tiny(2.3--4.0)} & 5.6 {\tiny(4.4--6.8)} & 22.0 {\tiny(18.7--25.3)} \\
+Oracle + informed & 11.4 {\tiny(9.0--13.9)} & 2.5 {\tiny(1.8--3.4)} & 4.9 {\tiny(3.8--6.0)} & 12.2 {\tiny(9.5--14.8)} \\
+Full restart & \textbf{14.2} {\tiny(11.7--16.8)} & 2.8 {\tiny(2.0--3.7)} & \textbf{5.9} {\tiny(4.6--7.2)} & 21.2 {\tiny(18.1--24.5)} \\
+Best unc.+bt2 & 13.2 {\tiny(10.7--15.7)} & 3.4 {\tiny(2.5--4.3)} & 5.6 {\tiny(4.3--6.9)} & \textbf{25.4} {\tiny(22.0--28.9)} \\
 \midrule
-Ensemble (any) & 36.0 {\scriptsize(32.5--39.7)} & 9.6 {\scriptsize(8.1--11.1)} & 16.2 {\scriptsize(14.3--18.3)} & 46.0 {\scriptsize(42.0--49.9)} \\
+Ensemble (any) & 36.0 {\tiny(32.5--39.7)} & 9.6 {\tiny(8.1--11.1)} & 16.2 {\tiny(14.3--18.3)} & 46.0 {\tiny(42.0--49.9)} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -277,7 +283,8 @@ On 2WikiMultiHopQA, oracle-targeted repair without backtracking is strikingly we
 \centering
 \caption{Effect of backtracking (bt2 = 2 steps upstream) on oracle-targeted repair. Backtracking consistently improves fix rates.}
 \label{tab:backtrack}
-\small
+\scriptsize
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 \textbf{Strategy} & \textbf{HotpotQA} & \textbf{FEVER} & \textbf{MuSiQue} & \textbf{2Wiki} \\
@@ -305,7 +312,8 @@ This finding validates the motivation for our cascade-aware localization rules, 
 \centering
 \caption{Uncertainty-guided vs.\ random repair. Best uncertainty strategy shown per dataset. All outperform random step.}
 \label{tab:unc_vs_random}
-\small
+\scriptsize
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 \textbf{Strategy} & \textbf{HotpotQA} & \textbf{FEVER} & \textbf{MuSiQue} & \textbf{2Wiki} \\
@@ -328,7 +336,8 @@ Table~\ref{tab:localization} reports localization accuracy across metrics and da
 \centering
 \caption{Localization accuracy (argmax top-1 exact match) by uncertainty metric. Self-consistency is the strongest localizer across all datasets. Random baseline shown for reference.}
 \label{tab:localization}
-\small
+\scriptsize
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 \textbf{Metric} & \textbf{HotpotQA} & \textbf{FEVER} & \textbf{MuSiQue} & \textbf{2Wiki} \\
