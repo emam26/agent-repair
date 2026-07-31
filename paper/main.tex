@@ -231,6 +231,14 @@ We validate the judge against 50 human-labeled trajectories per dataset, measuri
 
 \paragraph{Statistical Tests.} McNemar's paired test between strategies (per-question success vectors aggregated via majority vote over 3 seeds), with Holm-Bonferroni correction for multiple comparisons. Bootstrap confidence intervals (10,000 resamples) for all fix rates.
 
+% Pre-place full-width figure so it appears at the top of the Results page
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_cross_dataset_bars.png}
+\caption{Repair success rates (\%) across four benchmarks and seven strategy categories. 2WikiMultiHopQA shows the highest absolute fix rates; ensemble strategies achieve 2--4$\times$ higher rates at substantially greater compute cost.}
+\label{fig:cross_bars}
+\end{figure*}
+
 % =========================================================================== %
 % 6. RESULTS
 % =========================================================================== %
@@ -239,13 +247,6 @@ We validate the judge against 50 human-labeled trajectories per dataset, measuri
 \subsection{RQ1: Is Targeted Repair Worth Pursuing?}
 
 Table~\ref{tab:main_results} presents the core comparison across all four benchmarks. Figure~\ref{fig:cross_bars} visualizes the repair success rates across strategies and datasets.
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{figures/fig_cross_dataset_bars.png}
-\caption{Repair success rates (\%) across four benchmarks and seven strategy categories. 2WikiMultiHopQA shows the highest absolute fix rates; ensemble strategies achieve 2--4$\times$ higher rates at substantially greater compute cost.}
-\label{fig:cross_bars}
-\end{figure*}
 
 \begin{table}[t]
 \centering
@@ -295,16 +296,16 @@ Oracle + bt2 & 12.4 (+1.5) & 3.2 (+0.7) & 5.6 (+0.7) & 22.0 (+12.0) \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
+\paragraph{Finding 2: Backtracking consistently helps.} Across all four benchmarks, starting the repair two steps upstream of the identified failure point improves success rates (Table~\ref{tab:backtrack} and Figure~\ref{fig:bt_gain}). The effect is most dramatic on 2WikiMultiHopQA, where backtracking more than doubles the oracle fix rate (10.0\% $\to$ 22.0\%, a +12.0 pp gain). This confirms the error cascade hypothesis: errors propagate forward through reasoning chains, and the true root cause often precedes the step where uncertainty peaks or the judge identifies failure.
+
+This finding validates the motivation for our cascade-aware localization rules, which explicitly model upstream error origins.
+
+\begin{figure}[!b]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_backtracking_gain.png}
 \caption{Left: Oracle, Oracle+bt2, and Full Restart fix rates. Right: Backtracking gain (Oracle+bt2 $-$ Oracle). The +12.0 pp gain on 2WikiMultiHopQA confirms strong error cascade effects.}
 \label{fig:bt_gain}
 \end{figure}
-
-\paragraph{Finding 2: Backtracking consistently helps.} Across all four benchmarks, starting the repair two steps upstream of the identified failure point improves success rates (Table~\ref{tab:backtrack} and Figure~\ref{fig:bt_gain}). The effect is most dramatic on 2WikiMultiHopQA, where backtracking more than doubles the oracle fix rate (10.0\% $\to$ 22.0\%, a +12.0 pp gain). This confirms the error cascade hypothesis: errors propagate forward through reasoning chains, and the true root cause often precedes the step where uncertainty peaks or the judge identifies failure.
-
-This finding validates the motivation for our cascade-aware localization rules, which explicitly model upstream error origins.
 
 \subsection{RQ3: Is Uncertainty Better Than Luck?}
 
@@ -353,14 +354,14 @@ Random baseline & 0.223 & 0.304 & 0.153 & 0.236 \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
+\paragraph{Self-consistency is the best localizer.} Across all datasets, self-consistency achieves the highest argmax top-1 accuracy, reaching 40.4\% on 2WikiMultiHopQA---the only dataset where it substantially exceeds the random baseline (0.404 vs.\ 0.236). On HotpotQA, it reaches 24.8\%. Notably, on FEVER and MuSiQue, even the best uncertainty metric underperforms the random baseline for exact localization---yet uncertainty-guided \emph{repair} still outperforms random repair, suggesting that approximate localization (within 1--2 steps) is sufficient for effective repair, especially with backtracking.
+
+\begin{figure}[!b]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_localization_heatmap.png}
 \caption{Localization accuracy (argmax top-1) by uncertainty metric and dataset. Self-consistency achieves the highest accuracy across all benchmarks, reaching 0.404 on 2WikiMultiHopQA.}
 \label{fig:loc_heatmap}
 \end{figure}
-
-\paragraph{Self-consistency is the best localizer.} Across all datasets, self-consistency achieves the highest argmax top-1 accuracy, reaching 40.4\% on 2WikiMultiHopQA---the only dataset where it substantially exceeds the random baseline (0.404 vs.\ 0.236). On HotpotQA, it reaches 24.8\%. Notably, on FEVER and MuSiQue, even the best uncertainty metric underperforms the random baseline for exact localization---yet uncertainty-guided \emph{repair} still outperforms random repair, suggesting that approximate localization (within 1--2 steps) is sufficient for effective repair, especially with backtracking.
 
 \paragraph{Localization degrades with trajectory complexity.} MuSiQue (2--4 hops, longer trajectories) shows the lowest localization accuracy (12.9\% top-1 for self-consistency vs.\ 40.4\% on 2WikiMultiHopQA), reflecting the difficulty of pinpointing errors in longer reasoning chains where uncertainty is more diffuse. The high localization accuracy on 2WikiMultiHopQA likely contributes to the strong performance of uncertainty-guided repair on this dataset.
 
@@ -399,13 +400,6 @@ Ensemble (any) & 11,426 & 46.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{figures/fig_pareto_all_datasets.png}
-\caption{Cost-accuracy Pareto fronts for all four datasets. Each grey dot is an individual repair strategy; labeled points show baselines. On 2WikiMultiHopQA, many uncertainty strategies dominate the Pareto front above Full Restart.}
-\label{fig:pareto}
-\end{figure*}
 
 The ensemble strategy---which succeeds if \emph{any} member strategy produces a correct answer---achieves 36.0\% on HotpotQA, 9.6\% on FEVER, 16.2\% on MuSiQue, and 46.0\% on 2WikiMultiHopQA (Table~\ref{tab:cost}). However, this comes at 47--70$\times$ the compute cost of individual strategies. Notably, 2WikiMultiHopQA shows the highest absolute fix rates across all strategies, likely due to the lower failure rate (203/500 vs.\ 226--485/500 on other datasets) indicating that these failures are more ``repairable.'' This highlights a fundamental tradeoff: practitioners must choose between cheap-but-moderate repair (single strategy) and expensive-but-effective repair (ensemble).
 
@@ -447,6 +441,13 @@ We identify two dominant failure modes in localization:
   \item \textbf{Error upstream of peak} ($\sim$70\% of misses): The true broken step precedes the uncertainty peak, as described above. Cascade-aware rules partially address this.
   \item \textbf{Uncertain but correct exploration} ($\sim$20\% of misses): The highest-uncertainty step is actually a valid exploratory action (\eg, searching for an entity that turns out to be irrelevant). High uncertainty on exploration steps is appropriate behavior, not a signal of error.
 \end{enumerate}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_pareto_all_datasets.png}
+\caption{Cost-accuracy Pareto fronts for all four datasets. Each grey dot is an individual repair strategy; labeled points show baselines. On 2WikiMultiHopQA, many uncertainty strategies dominate the Pareto front above Full Restart.}
+\label{fig:pareto}
+\end{figure*}
 
 % =========================================================================== %
 % 8. DISCUSSION
