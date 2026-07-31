@@ -36,8 +36,19 @@ def download_2wikimultihop(dst: str) -> int:
     """
     from datasets import load_dataset as hf_load
 
-    ds = hf_load("scholarly-shadows-syndicate/2WikiMultihopQA",
-                 split="validation", trust_remote_code=True)
+    # Try framolfese (Parquet, HotpotQA-compatible layout) first,
+    # then xanhho (official GitHub mirror)
+    ds = None
+    for repo in ["framolfese/2WikiMultihopQA", "xanhho/2WikiMultihopQA"]:
+        try:
+            ds = hf_load(repo, split="validation", trust_remote_code=True)
+            print(f"  Loaded 2WikiMultiHopQA from {repo}")
+            break
+        except Exception as e:
+            print(f"  {repo} failed: {e}")
+    if ds is None:
+        raise RuntimeError(
+            "Could not load 2WikiMultiHopQA from any HuggingFace source.")
 
     recs = []
     for ex in ds:
