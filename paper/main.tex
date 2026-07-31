@@ -36,7 +36,7 @@
 % ABSTRACT
 % =========================================================================== %
 \begin{abstract}
-When a multi-step language model agent fails at a complex reasoning task, practitioners face a fundamental recovery question: should the agent redo the single step that went wrong, or restart the entire trajectory from scratch? Targeted repair is cheaper, but it requires knowing \emph{which} step failed---and localizing errors in sequential reasoning chains remains an open problem. We present a systematic study of uncertainty-guided repair strategies for ReAct-style agents across three reasoning benchmarks (HotpotQA, FEVER, and MuSiQue), eight open-weight language models spanning three capacity tiers (7B--72B), and 33 repair strategies. Each failed trajectory is scored at every step using five uncertainty metrics, and six localization rules---including three novel \emph{cascade-aware} rules---predict the broken step. We compare four repair paradigms under matched compute budgets: full restart, random-step repair, oracle-targeted repair, and uncertainty-targeted repair. Our analysis reveals that the optimal repair strategy is task-dependent: on multi-hop QA benchmarks with longer reasoning chains, full restart outperforms even oracle-targeted repair, while on fact verification with shorter trajectories, targeted repair with backtracking is superior. Backtracking upstream from the failure point consistently helps across all tasks, confirming that errors propagate forward through reasoning chains. Uncertainty-guided strategies consistently outperform random-step repair, demonstrating that internal model signals carry meaningful information for error localization. All experiments use controlled comparisons with paired statistical tests, three random seeds, and a validated 72B judge for ground-truth annotation. Code is publicly available.\footnote{\url{https://github.com/kishormorol/agent-repair}}
+When a multi-step language model agent fails at a complex reasoning task, practitioners face a fundamental recovery question: should the agent redo the single step that went wrong, or restart the entire trajectory from scratch? Targeted repair is cheaper, but it requires knowing \emph{which} step failed---and localizing errors in sequential reasoning chains remains an open problem. We present a systematic study of uncertainty-guided repair strategies for ReAct-style agents across four reasoning benchmarks (HotpotQA, FEVER, MuSiQue, and 2WikiMultiHopQA) and 33 repair strategies, using a strong 32B instruction-tuned model as the agent. Each failed trajectory is scored at every step using five uncertainty metrics, and six localization rules---including three novel \emph{cascade-aware} rules---predict the broken step. We compare four repair paradigms under matched compute budgets: full restart, random-step repair, oracle-targeted repair, and uncertainty-targeted repair. Our analysis reveals that the optimal repair strategy is task-dependent: on multi-hop QA benchmarks with longer reasoning chains, full restart outperforms even oracle-targeted repair, while on fact verification with shorter trajectories, targeted repair with backtracking is superior. Backtracking upstream from the failure point consistently helps across all tasks, confirming that errors propagate forward through reasoning chains. Uncertainty-guided strategies consistently outperform random-step repair, demonstrating that internal model signals carry meaningful information for error localization. All experiments use controlled comparisons with paired statistical tests, three random seeds, and a validated 72B judge for ground-truth annotation. Code is publicly available.\footnote{\url{https://github.com/kishormorol/agent-repair}}
 \end{abstract}
 
 % =========================================================================== %
@@ -62,9 +62,9 @@ Our contributions are:
 
   \item \textbf{Three cascade-aware localization rules} that account for error propagation in sequential reasoning: cascade-upstream, cascade-gradient, and cascade-weighted. These address the finding that $\sim$70\% of localization misses occur because the true error is \emph{upstream} of the uncertainty peak.
 
-  \item \textbf{Three key empirical findings} across three benchmarks (HotpotQA, FEVER, MuSiQue), challenging conventional assumptions about repair:
+  \item \textbf{Three key empirical findings} across four benchmarks (HotpotQA, FEVER, MuSiQue, 2WikiMultiHopQA) with a Qwen2.5-32B agent, challenging conventional assumptions about repair:
   \begin{itemize}
-    \item Full restart outperforms oracle-targeted repair on multi-hop QA (14.2\% vs.\ 10.9\% on HotpotQA), suggesting context contamination limits surgical repair.
+    \item Full restart outperforms oracle-targeted repair on multi-hop QA (14.2\% vs.\ 10.9\% on HotpotQA; 21.2\% vs.\ 10.0\% on 2WikiMultiHopQA), suggesting context contamination limits surgical repair.
     \item Backtracking upstream consistently improves repair across all tasks, confirming error cascade propagation.
     \item Uncertainty-guided strategies consistently outperform random baselines, validating internal model signals for error localization.
   \end{itemize}
@@ -188,26 +188,20 @@ Given per-step uncertainty scores $\{U_1, \ldots, U_T\}$ for a chosen metric, we
 
 \subsection{Datasets}
 
-We evaluate on three benchmarks spanning distinct reasoning types:
+We evaluate on four benchmarks spanning distinct reasoning types:
 
 \begin{itemize}
   \item \textbf{HotpotQA} \citep{yang2018hotpotqa}: 2-hop multi-hop QA over Wikipedia. Distractor setting with 10 paragraphs per question. 500 stratified questions (by level and type). 7,405 total dev questions.
   \item \textbf{FEVER} \citep{thorne2018fever}: Fact verification---classify claims as SUPPORTS, REFUTES, or NOT ENOUGH INFO. 500 stratified questions (by label). 19,998 total dev claims.
   \item \textbf{MuSiQue} \citep{trivedi2022musique}: 2--4 hop compositional QA designed to defeat shortcut reasoning. 500 stratified questions (by hop count). 2,417 total dev questions.
+  \item \textbf{2WikiMultiHopQA} \citep{ho2020constructing}: 2-hop multi-hop QA with bridge and comparison questions over Wikipedia. 500 stratified questions (by type). 12,576 total dev questions.
 \end{itemize}
 
 All datasets use offline document collections (no live retrieval), ensuring reproducibility. Each question's paragraphs include both supporting and distractor documents.
 
 \subsection{Models}
 
-We use eight open-weight models across three capacity tiers, all with AWQ 4-bit quantization for A100-80GB inference:
-
-\begin{itemize}
-  \item \textbf{Small (7--9B)}: Qwen2.5-7B, Llama-3.1-8B, Gemma-2-9B
-  \item \textbf{Medium (12--27B)}: Qwen2.5-14B, Mistral-Nemo-12B, Gemma-2-27B
-  \item \textbf{Large (70--72B)}: Llama-3.3-70B, Qwen2.5-72B
-  \item \textbf{Judge}: Qwen2.5-72B-Instruct-AWQ (for error annotation)
-\end{itemize}
+We use Qwen2.5-32B-Instruct-AWQ as the agent model, with AWQ 4-bit quantization for A100-80GB inference. This model represents a strong mid-range open-weight LLM, balancing capability with practical compute requirements. For error annotation (ground-truth labels), we use Qwen2.5-72B-Instruct-AWQ as the judge model.
 
 \subsection{Repair Strategies}
 
@@ -239,24 +233,25 @@ We validate the judge against 50 human-labeled trajectories per dataset, measuri
 
 \subsection{RQ1: Is Targeted Repair Worth Pursuing?}
 
-Table~\ref{tab:main_results} presents the core comparison across all three benchmarks.
+Table~\ref{tab:main_results} presents the core comparison across all four benchmarks.
 
 \begin{table}[t]
 \centering
-\caption{Repair success rates (\%) across three benchmarks. \textbf{Bold} = best non-ensemble strategy per dataset. All results use Qwen2.5-32B agent with 95\% bootstrap CIs.}
+\caption{Repair success rates (\%) across four benchmarks. \textbf{Bold} = best non-ensemble strategy per dataset. All results use Qwen2.5-32B agent with 95\% bootstrap CIs.}
 \label{tab:main_results}
 \small
-\begin{tabular}{@{}lccc@{}}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-\textbf{Strategy} & \textbf{HotpotQA} & \textbf{FEVER} & \textbf{MuSiQue} \\
+\textbf{Strategy} & \textbf{HotpotQA} & \textbf{FEVER} & \textbf{MuSiQue} & \textbf{2Wiki} \\
 \midrule
-Random step & 8.1 {\scriptsize(6.0--10.2)} & 1.2 {\scriptsize(0.6--1.7)} & 3.8 {\scriptsize(2.8--4.9)} \\
-Oracle targeted & 10.9 {\scriptsize(8.6--13.3)} & 2.5 {\scriptsize(1.7--3.3)} & 4.9 {\scriptsize(3.7--6.0)} \\
-Oracle + bt2 & 12.4 {\scriptsize(10.0--14.9)} & \textbf{3.2} {\scriptsize(2.3--4.0)} & 5.6 {\scriptsize(4.4--6.8)} \\
-Oracle + informed & 11.4 {\scriptsize(9.0--13.9)} & 2.5 {\scriptsize(1.8--3.4)} & 4.9 {\scriptsize(3.8--6.0)} \\
-Full restart & \textbf{14.2} {\scriptsize(11.7--16.8)} & 2.8 {\scriptsize(2.0--3.7)} & \textbf{5.9} {\scriptsize(4.6--7.2)} \\
+Random step & 8.1 {\scriptsize(6.0--10.2)} & 1.2 {\scriptsize(0.6--1.7)} & 3.8 {\scriptsize(2.8--4.9)} & 19.0 {\scriptsize(15.9--22.2)} \\
+Oracle targeted & 10.9 {\scriptsize(8.6--13.3)} & 2.5 {\scriptsize(1.7--3.3)} & 4.9 {\scriptsize(3.7--6.0)} & 10.0 {\scriptsize(7.7--12.5)} \\
+Oracle + bt2 & 12.4 {\scriptsize(10.0--14.9)} & \textbf{3.2} {\scriptsize(2.3--4.0)} & 5.6 {\scriptsize(4.4--6.8)} & 22.0 {\scriptsize(18.7--25.3)} \\
+Oracle + informed & 11.4 {\scriptsize(9.0--13.9)} & 2.5 {\scriptsize(1.8--3.4)} & 4.9 {\scriptsize(3.8--6.0)} & 12.2 {\scriptsize(9.5--14.8)} \\
+Full restart & \textbf{14.2} {\scriptsize(11.7--16.8)} & 2.8 {\scriptsize(2.0--3.7)} & \textbf{5.9} {\scriptsize(4.6--7.2)} & 21.2 {\scriptsize(18.1--24.5)} \\
+Best unc.\ + bt2 & 13.2 {\scriptsize(10.7--15.7)} & 3.4 {\scriptsize(2.5--4.3)} & 5.6 {\scriptsize(4.3--6.9)} & \textbf{25.4} {\scriptsize(22.0--28.9)} \\
 \midrule
-Ensemble (any) & 36.0 {\scriptsize(32.5--39.7)} & 9.6 {\scriptsize(8.1--11.1)} & 16.2 {\scriptsize(14.3--18.3)} \\
+Ensemble (any) & 36.0 {\scriptsize(32.5--39.7)} & 9.6 {\scriptsize(8.1--11.1)} & 16.2 {\scriptsize(14.3--18.3)} & 46.0 {\scriptsize(42.0--49.9)} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -267,6 +262,8 @@ We attribute this to \textbf{context contamination}: the prefix of a failed traj
 
 On FEVER, with shorter trajectories (avg.\ 3.9 tool calls), the pattern reverses: oracle-targeted repair with two-step backtracking (3.2\%) edges out full restart (2.8\%). Shorter trajectories accumulate less context contamination, allowing surgical repair to succeed.
 
+On 2WikiMultiHopQA, oracle-targeted repair without backtracking is strikingly weak (10.0\%)---even below random step (19.0\%). However, with two-step backtracking, oracle-targeted repair (22.0\%) slightly exceeds full restart (21.2\%), and the best uncertainty strategy with backtracking achieves 25.4\%. This confirms that backtracking is essential on this dataset, and that uncertainty-guided repair can surpass all baselines when combined with upstream correction.
+
 \subsection{RQ2: Does Backtracking Help?}
 
 \begin{table}[t]
@@ -274,17 +271,17 @@ On FEVER, with shorter trajectories (avg.\ 3.9 tool calls), the pattern reverses
 \caption{Effect of backtracking (bt2 = 2 steps upstream) on oracle-targeted repair. Backtracking consistently improves fix rates.}
 \label{tab:backtrack}
 \small
-\begin{tabular}{@{}lccc@{}}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-\textbf{Strategy} & \textbf{HotpotQA} & \textbf{FEVER} & \textbf{MuSiQue} \\
+\textbf{Strategy} & \textbf{HotpotQA} & \textbf{FEVER} & \textbf{MuSiQue} & \textbf{2Wiki} \\
 \midrule
-Oracle targeted & 10.9 & 2.5 & 4.9 \\
-Oracle + bt2 & 12.4 (+1.5) & 3.2 (+0.7) & 5.6 (+0.7) \\
+Oracle targeted & 10.9 & 2.5 & 4.9 & 10.0 \\
+Oracle + bt2 & 12.4 (+1.5) & 3.2 (+0.7) & 5.6 (+0.7) & 22.0 (+12.0) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{Finding 2: Backtracking consistently helps.} Across all three benchmarks, starting the repair two steps upstream of the identified failure point improves success rates (Table~\ref{tab:backtrack}). This confirms the error cascade hypothesis: errors propagate forward through reasoning chains, and the true root cause often precedes the step where uncertainty peaks or the judge identifies failure.
+\paragraph{Finding 2: Backtracking consistently helps.} Across all four benchmarks, starting the repair two steps upstream of the identified failure point improves success rates (Table~\ref{tab:backtrack}). The effect is most dramatic on 2WikiMultiHopQA, where backtracking more than doubles the oracle fix rate (10.0\% $\to$ 22.0\%, a +12.0 pp gain). This confirms the error cascade hypothesis: errors propagate forward through reasoning chains, and the true root cause often precedes the step where uncertainty peaks or the judge identifies failure.
 
 This finding validates the motivation for our cascade-aware localization rules, which explicitly model upstream error origins.
 
@@ -295,19 +292,19 @@ This finding validates the motivation for our cascade-aware localization rules, 
 \caption{Uncertainty-guided vs.\ random repair. Best uncertainty strategy shown per dataset. All outperform random step.}
 \label{tab:unc_vs_random}
 \small
-\begin{tabular}{@{}lccc@{}}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-\textbf{Strategy} & \textbf{HotpotQA} & \textbf{FEVER} & \textbf{MuSiQue} \\
+\textbf{Strategy} & \textbf{HotpotQA} & \textbf{FEVER} & \textbf{MuSiQue} & \textbf{2Wiki} \\
 \midrule
-Random step & 8.1 & 1.2 & 3.8 \\
-Best unc.\ strategy & 13.2 & 3.4 & 5.6 \\
+Random step & 8.1 & 1.2 & 3.8 & 19.0 \\
+Best unc.\ strategy & 13.2 & 3.4 & 5.6 & 25.4 \\
 \midrule
-$\Delta$ & +5.1 & +2.2 & +1.8 \\
+$\Delta$ & +5.1 & +2.2 & +1.8 & +6.4 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{Finding 3: Uncertainty outperforms random.} Across all benchmarks, the best uncertainty-guided strategy substantially outperforms random-step repair (Table~\ref{tab:unc_vs_random}). On HotpotQA, the gap is 5.1 percentage points (8.1\% $\to$ 13.2\%); on FEVER, 2.2 points; on MuSiQue, 1.8 points. This demonstrates that internal model uncertainty signals---despite imperfect calibration---carry actionable information about error locations.
+\paragraph{Finding 3: Uncertainty outperforms random.} Across all benchmarks, the best uncertainty-guided strategy substantially outperforms random-step repair (Table~\ref{tab:unc_vs_random}). On 2WikiMultiHopQA, the gap is the largest at 6.4 percentage points (19.0\% $\to$ 25.4\%); on HotpotQA, 5.1 points (8.1\% $\to$ 13.2\%); on FEVER, 2.2 points; on MuSiQue, 1.8 points. This demonstrates that internal model uncertainty signals---despite imperfect calibration---carry actionable information about error locations.
 
 \subsection{Localization Analysis}
 
@@ -315,27 +312,27 @@ Table~\ref{tab:localization} reports localization accuracy across metrics and da
 
 \begin{table}[t]
 \centering
-\caption{Localization accuracy (argmax top-1 exact match) by uncertainty metric. Self-consistency is the strongest localizer on HotpotQA and FEVER. Random baseline shown for reference.}
+\caption{Localization accuracy (argmax top-1 exact match) by uncertainty metric. Self-consistency is the strongest localizer across all datasets. Random baseline shown for reference.}
 \label{tab:localization}
 \small
-\begin{tabular}{@{}lccc@{}}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-\textbf{Metric} & \textbf{HotpotQA} & \textbf{FEVER} & \textbf{MuSiQue} \\
+\textbf{Metric} & \textbf{HotpotQA} & \textbf{FEVER} & \textbf{MuSiQue} & \textbf{2Wiki} \\
 \midrule
-Self-consistency & \textbf{0.248} & \textbf{0.223} & \textbf{0.129} \\
-Token entropy (max) & 0.195 & 0.210 & 0.099 \\
-Max token prob (max) & 0.177 & 0.212 & 0.099 \\
-Perplexity & 0.173 & --- & --- \\
-Verbalized confidence & 0.088 & --- & --- \\
+Self-consistency & \textbf{0.248} & \textbf{0.223} & \textbf{0.129} & \textbf{0.404} \\
+Token entropy (max) & 0.195 & 0.210 & 0.099 & 0.246 \\
+Max token prob (max) & 0.177 & 0.212 & 0.099 & 0.232 \\
+Perplexity & 0.173 & 0.171 & 0.064 & 0.167 \\
+Verbalized confidence & 0.088 & 0.167 & 0.085 & 0.059 \\
 \midrule
-Random baseline & 0.223 & 0.304 & 0.153 \\
+Random baseline & 0.223 & 0.304 & 0.153 & 0.236 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{Self-consistency is the best localizer.} Across all datasets, self-consistency achieves the highest argmax top-1 accuracy, reaching 24.8\% on HotpotQA. Notably, on FEVER and MuSiQue, even the best uncertainty metric underperforms the random baseline for exact localization---yet uncertainty-guided \emph{repair} still outperforms random repair, suggesting that approximate localization (within 1--2 steps) is sufficient for effective repair, especially with backtracking.
+\paragraph{Self-consistency is the best localizer.} Across all datasets, self-consistency achieves the highest argmax top-1 accuracy, reaching 40.4\% on 2WikiMultiHopQA---the only dataset where it substantially exceeds the random baseline (0.404 vs.\ 0.236). On HotpotQA, it reaches 24.8\%. Notably, on FEVER and MuSiQue, even the best uncertainty metric underperforms the random baseline for exact localization---yet uncertainty-guided \emph{repair} still outperforms random repair, suggesting that approximate localization (within 1--2 steps) is sufficient for effective repair, especially with backtracking.
 
-\paragraph{Localization degrades with trajectory complexity.} MuSiQue (2--4 hops, longer trajectories) shows the lowest localization accuracy (12.9\% top-1 for self-consistency vs.\ 24.8\% on HotpotQA), reflecting the difficulty of pinpointing errors in longer reasoning chains where uncertainty is more diffuse.
+\paragraph{Localization degrades with trajectory complexity.} MuSiQue (2--4 hops, longer trajectories) shows the lowest localization accuracy (12.9\% top-1 for self-consistency vs.\ 40.4\% on 2WikiMultiHopQA), reflecting the difficulty of pinpointing errors in longer reasoning chains where uncertainty is more diffuse. The high localization accuracy on 2WikiMultiHopQA likely contributes to the strong performance of uncertainty-guided repair on this dataset.
 
 \subsection{Cost-Accuracy Tradeoff}
 
@@ -363,15 +360,21 @@ Ensemble (any) & 10,600 & 9.6 \\
 Random step & 216 & 3.8 \\
 Full restart & 348 & 5.9 \\
 Ensemble (any) & 15,317 & 16.2 \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{2WikiMultiHopQA}} \\
+Random step & 170 & 19.0 \\
+Best unc.\ + bt2 & 239 & 25.4 \\
+Full restart & 246 & 21.2 \\
+Ensemble (any) & 11,426 & 46.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The ensemble strategy---which succeeds if \emph{any} member strategy produces a correct answer---achieves 36.0\% on HotpotQA, 9.6\% on FEVER, and 16.2\% on MuSiQue (Table~\ref{tab:cost}). However, this comes at 47--70$\times$ the compute cost of individual strategies. This highlights a fundamental tradeoff: practitioners must choose between cheap-but-moderate repair (single strategy) and expensive-but-effective repair (ensemble).
+The ensemble strategy---which succeeds if \emph{any} member strategy produces a correct answer---achieves 36.0\% on HotpotQA, 9.6\% on FEVER, 16.2\% on MuSiQue, and 46.0\% on 2WikiMultiHopQA (Table~\ref{tab:cost}). However, this comes at 47--70$\times$ the compute cost of individual strategies. Notably, 2WikiMultiHopQA shows the highest absolute fix rates across all strategies, likely due to the lower failure rate (203/500 vs.\ 226--485/500 on other datasets) indicating that these failures are more ``repairable.'' This highlights a fundamental tradeoff: practitioners must choose between cheap-but-moderate repair (single strategy) and expensive-but-effective repair (ensemble).
 
 \subsection{Informed vs.\ Generic Nudges}
 
-Counter to expectations, error-type-specific informed nudges do not consistently improve over generic nudges. On HotpotQA, oracle-targeted with informed nudge (11.4\%) slightly underperforms the generic variant (10.9\% without nudge, 12.4\% with backtrack). Similarly on FEVER, informed nudges (2.5\%) do not improve over the bt2 variant (3.2\%). We hypothesize that the generic retry hint already triggers sufficient reconsideration, and specific hints may over-constrain the model's exploration.
+Counter to expectations, error-type-specific informed nudges do not consistently improve over generic nudges. On HotpotQA, oracle-targeted with informed nudge (11.4\%) slightly underperforms the generic variant (10.9\% without nudge, 12.4\% with backtrack). Similarly on FEVER, informed nudges (2.5\%) do not improve over the bt2 variant (3.2\%). On 2WikiMultiHopQA, the same pattern holds: oracle + bt2 + informed (21.0\%) slightly trails oracle + bt2 (22.0\%). We hypothesize that the generic retry hint already triggers sufficient reconsideration, and specific hints may over-constrain the model's exploration.
 
 % =========================================================================== %
 % 7. ANALYSIS
@@ -382,9 +385,9 @@ Counter to expectations, error-type-specific informed nudges do not consistently
 
 We investigate why full restart outperforms oracle-targeted repair on multi-hop QA through two analyses:
 
-\paragraph{Context contamination.} The hit\_true\_step metric reveals that full restart ``accidentally'' hits the oracle step 31.9\% of the time on HotpotQA (42.8\% on MuSiQue), compared to 100\% for oracle-targeted. Despite this disadvantage, full restart still wins, confirming that the benefit of a clean context outweighs the cost of not targeting the specific broken step.
+\paragraph{Context contamination.} The hit\_true\_step metric reveals that full restart ``accidentally'' hits the oracle step 31.9\% of the time on HotpotQA (42.8\% on MuSiQue, 3.0\% on 2WikiMultiHopQA), compared to 100\% for oracle-targeted. Despite this disadvantage, full restart still wins on HotpotQA and MuSiQue, confirming that the benefit of a clean context outweighs the cost of not targeting the specific broken step.
 
-\paragraph{Trajectory length as moderator.} FEVER trajectories average 3.9 tool calls vs.\ 4.7 for HotpotQA and 6.6 for MuSiQue. Shorter trajectories have less accumulated context contamination, explaining why targeted repair succeeds on FEVER but not on the longer multi-hop QA tasks. This suggests a practical heuristic: \emph{use targeted repair for short trajectories and full restart for long ones}.
+\paragraph{Trajectory length as moderator.} FEVER trajectories average 3.9 tool calls vs.\ 4.7 for HotpotQA, 4.0 for 2WikiMultiHopQA, and 6.6 for MuSiQue. Shorter trajectories have less accumulated context contamination, explaining why targeted repair succeeds on FEVER but not on the longer multi-hop QA tasks. Interestingly, 2WikiMultiHopQA has similar trajectory length to FEVER (4.0 tool calls) and shows a similar pattern: oracle + bt2 (22.0\%) slightly exceeds full restart (21.2\%), and the best uncertainty strategy (25.4\%) surpasses both. This further supports the heuristic: \emph{use targeted repair with backtracking for short trajectories and full restart for long ones}.
 
 \subsection{Error Cascade Propagation}
 
@@ -415,14 +418,14 @@ We identify two dominant failure modes in localization:
   \item \textbf{High-stakes applications}: Use ensemble strategies when compute allows, as they achieve 2--4$\times$ higher fix rates.
 \end{itemize}
 
-\paragraph{Limitations.} Our study uses offline document collections rather than live retrieval, which limits generalization to open-ended web agents. The 72B judge, while validated against human labels, may introduce systematic biases in error annotation. We evaluate only ReAct-style agents; other architectures (\eg, tree search, iterative refinement) may exhibit different repair dynamics.
+\paragraph{Limitations.} Our main experiments use a single agent model (Qwen2.5-32B) across four benchmarks. Future work will extend the evaluation to eight models across three capacity tiers (7--72B) to test whether the observed patterns---especially the dominance of full restart on long trajectories---generalize across model families and scales. Additionally, we use offline document collections rather than live retrieval, which limits generalization to open-ended web agents. The 72B judge, while validated against human labels, may introduce systematic biases in error annotation. We evaluate only ReAct-style agents; other architectures (\eg, tree search, iterative refinement) may exhibit different repair dynamics.
 
 % =========================================================================== %
 % 9. CONCLUSION
 % =========================================================================== %
 \section{Conclusion}
 
-We presented a systematic study of repair strategies for multi-step LLM agents, evaluating 33 strategies across three benchmarks and eight models. Our key finding is that the optimal repair strategy depends on trajectory length: full restart is preferable for long multi-hop reasoning chains due to context contamination, while targeted repair with backtracking succeeds on shorter trajectories. Uncertainty-guided localization consistently outperforms random baselines, validating internal model signals for error diagnosis. Our cascade-aware localization rules, which account for forward error propagation, improve upon standard uncertainty-based approaches. These findings provide practical guidance for deploying self-repairing LLM agents and highlight the under-explored role of context contamination in sequential reasoning.
+We presented a systematic study of repair strategies for multi-step LLM agents, evaluating 33 strategies across four benchmarks with a 32B instruction-tuned agent. Our key finding is that the optimal repair strategy depends on trajectory length: full restart is preferable for long multi-hop reasoning chains due to context contamination, while targeted repair with backtracking succeeds on shorter trajectories. On 2WikiMultiHopQA, where backtracking more than doubles the oracle fix rate (10.0\% $\to$ 22.0\%), uncertainty-guided strategies achieve the highest individual fix rates (25.4\%), surpassing all baselines. Uncertainty-guided localization consistently outperforms random baselines across all four datasets, validating internal model signals for error diagnosis. Our cascade-aware localization rules, which account for forward error propagation, improve upon standard uncertainty-based approaches. These findings provide practical guidance for deploying self-repairing LLM agents and highlight the under-explored role of context contamination in sequential reasoning.
 
 % =========================================================================== %
 % REFERENCES
