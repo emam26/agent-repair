@@ -1,5 +1,10 @@
-\begin{thebibliography}{17}
+\begin{thebibliography}{18}
 \providecommand{\natexlab}[1]{#1}
+
+\bibitem[{Ceka et~al.(2026)Ceka, Mitchell, Pujar, Buratti, Ramji, Yang, Kaiser, and Ray}]{ceka2026understanding}
+Ceka, I.; Mitchell, H.; Pujar, S.; Buratti, L.; Ramji, S.; Yang, J.; Kaiser, G.; and Ray, B. 2026.
+\newblock Understanding Automated Program Repair Agents Through the Lens of Traceability: An Empirical Study.
+\newblock In \emph{Proceedings of the ACM SIGSOFT International Symposium on Software Testing and Analysis (ISSTA)}.
 
 \bibitem[{Ho et~al.(2020)Ho, Duong~Nguyen, Sugawara, and Aizawa}]{ho2020constructing}
 Ho, X.; Duong~Nguyen, A.-K.; Sugawara, S.; and Aizawa, A. 2020.
